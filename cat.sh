@@ -5,7 +5,6 @@ COLOR_RED="\e[31m"
 COLOR_GREEN="\e[32m"
 COLOR_YELLOW="\e[33m"
 COLOR_BLUE="\e[34m"
-COLOR_CYAN="\e[36m"
 COLOR_RESET="\e[0m"
 
 # Function to display and open links
@@ -17,7 +16,6 @@ display_and_open_links() {
     echo "Youtube :https://www.youtube.com/@wibucrypto2201"
     echo "Discord :https://discord.gg/krCx2ssjGa"
     echo "Tiktok :https://www.tiktok.com/@waibucrypto"
-    echo "Please select the action you want to perform:"
 }
 
 # Call the function to display and potentially open links
@@ -152,9 +150,9 @@ This script is completely free and open source.
 Please choose an operation as needed:
 1. Install dependencies and full node
 2. Create wallet
-3. Start minting CAT
-4. Check node synchronization log
-5. Check wallet balance
+3. Check node synchronization log
+4. Check wallet balance ( After this step got 100% then press 5 )
+5. Start minting CAT
 "
 
 # Get user selection and perform corresponding operation
@@ -167,13 +165,13 @@ case "$num" in
     create_wallet
     ;;
 3)
-    start_mint_cat
-    ;;
-4)
     check_node_log
     ;;
-5)
+4)
     check_wallet_balance
+    ;;
+5)
+    start_mint_cat
     ;;
 *)
     echo -e "Error: Please enter a valid number."
