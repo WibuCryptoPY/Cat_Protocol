@@ -94,7 +94,7 @@ install_env_and_full_node() {
     log "Creating mint script..."
     echo '#!/bin/bash
 
-    command="sudo yarn cli mint -i 45ee725c2c5993b3e4d308842d87e973bf1951f5f7a804b21e4dd964ecd12d6b_0 5"
+    command="sudo yarn cli mint -i 45ee725c2c5993b3e4d308842d87e973bf1951f5f7a804b21e4dd964ecd12d6b_0 5 --fee-rate $(curl -s https://explorer.unisat.io/fractal-mainnet/api/bitcoin-info/fee | jq '.data.fastestFee')"
 
     while true; do
         $command
@@ -140,8 +140,7 @@ check_wallet_balance() {
 
 # Display main menu
 echo -e "\n
-${COLOR_GREEN}Welcome to the CAT Token Box installation script.${COLOR_RESET}
-This script is completely free and open source.
+${COLOR_GREEN}Welcome to WibuCrypto.${COLOR_RESET}
 Please choose an operation as needed:
 1. Install dependencies and full node
 2. Create wallet
