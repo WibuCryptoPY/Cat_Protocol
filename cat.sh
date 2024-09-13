@@ -1,29 +1,25 @@
 #!/bin/bash
 
-# Colors for styling
+# Colors for styling and emoji support in logs
 COLOR_RED="\e[31m"
 COLOR_GREEN="\e[32m"
 COLOR_YELLOW="\e[33m"
 COLOR_BLUE="\e[34m"
 COLOR_RESET="\e[0m"
+COLOR_CYAN="\e[36m"
 
 # Function to display and open links
 display_and_open_links() {
-    echo "Welcome to WibuCrypto"
-    echo "============================CAT_Protocol===================================="
-    echo "Telegram :https://t.me/wibuairdrop142"
-    echo "Website :https://wibucrypto.pro/"
-    echo "Youtube :https://www.youtube.com/@wibucrypto2201"
-    echo "Discord :https://discord.gg/krCx2ssjGa"
-    echo "Tiktok :https://www.tiktok.com/@waibucrypto"
+    echo -e "${COLOR_BLUE}Welcome to WibuCrypto${COLOR_RESET}"
+    echo -e "============================${COLOR_YELLOW}CAT_Protocol${COLOR_RESET}============================"
+    echo -e "Telegram : https://t.me/wibuairdrop142"
+    echo -e "Website  : https://wibucrypto.pro/"
+    echo -e "Youtube  : https://www.youtube.com/@wibucrypto2201"
+    echo -e "Discord  : https://discord.gg/krCx2ssjGa"
+    echo -e "Tiktok   : https://www.tiktok.com/@waibucrypto"
 }
 
-# Call the function to display and potentially open links
-display_and_open_links
-
-# Rest of the script remains the same...
-
-# Log function with emoji support
+# Function to log messages with styling and emoji support
 log() {
     echo -e "${COLOR_CYAN}$1${COLOR_RESET}"
 }
@@ -34,58 +30,55 @@ handle_error() {
     exit 1
 }
 
-Crontab_file="/usr/bin/crontab"
-
-# Check if root user
+# Check if running as root user
 check_root() {
-    [[ $EUID != 0 ]] && echo "Error: Not currently root user. Please switch to root account or use 'sudo su' to obtain temporary root privileges." && exit 1
+    [[ $EUID != 0 ]] && handle_error "Not currently root user. Please switch to root account or use 'sudo su' to obtain temporary root privileges."
 }
 
-# Install dependencies and full node
+# Function to install environment dependencies and set up full node
 install_env_and_full_node() {
     check_root
-    # Update and upgrade system
-    sudo apt update && sudo apt upgrade -y
+    log "Updating and upgrading the system..."
+    sudo apt update && sudo apt upgrade -y || handle_error "Failed to update and upgrade the system."
 
-    # Install necessary tools and libraries
-    sudo apt install curl tar wget clang pkg-config libssl-dev jq build-essential git make ncdu unzip zip docker.io -y
+    log "Installing required tools and libraries..."
+    sudo apt install curl tar wget clang pkg-config libssl-dev jq build-essential git make ncdu unzip zip docker.io -y || handle_error "Failed to install required dependencies."
 
-    # Get the latest version of Docker Compose
+    log "Installing Docker Compose..."
     VERSION=$(curl --silent https://api.github.com/repos/docker/compose/releases/latest | grep -Po '"tag_name": "\K.*\d')
     DESTINATION=/usr/local/bin/docker-compose
-    sudo curl -L https://github.com/docker/compose/releases/download/${VERSION}/docker-compose-$(uname -s)-$(uname -m) -o $DESTINATION
-    sudo chmod 755 $DESTINATION
+    sudo curl -L https://github.com/docker/compose/releases/download/${VERSION}/docker-compose-$(uname -s)-$(uname -m) -o $DESTINATION || handle_error "Failed to download Docker Compose."
+    sudo chmod 755 $DESTINATION || handle_error "Failed to set permissions for Docker Compose."
 
-    # Install Node.js and Yarn
-    sudo apt-get install npm -y
-    sudo npm install n -g
-    sudo n stable
-    sudo npm i -g yarn
+    log "Installing Node.js, npm, and Yarn..."
+    sudo apt-get install npm -y || handle_error "Failed to install npm."
+    sudo npm install n -g || handle_error "Failed to install Node.js version manager."
+    sudo n stable || handle_error "Failed to install the stable version of Node.js."
+    sudo npm i -g yarn || handle_error "Failed to install Yarn."
 
-    # Clone CAT Token Box project and install and build
-    git clone https://github.com/CATProtocol/cat-token-box
-    cd cat-token-box
-    sudo yarn install
-    sudo yarn build
+    log "Cloning CAT Token Box project..."
+    git clone https://github.com/CATProtocol/cat-token-box || handle_error "Failed to clone CAT Token Box repository."
+    cd cat-token-box || handle_error "Failed to navigate to cat-token-box directory."
 
-    # Set up Docker environment and start services
-    cd ./packages/tracker/
-    sudo chmod 777 docker/data
-    sudo chmod 777 docker/pgdata
-    sudo docker-compose up -d
+    log "Installing project dependencies and building the project..."
+    sudo yarn install || handle_error "Failed to install dependencies."
+    sudo yarn build || handle_error "Failed to build the project."
 
-    # Build and run Docker image
-    cd ../../
-    sudo docker build -t tracker:latest .
-    sudo docker run -d \
-        --name tracker \
-        --add-host="host.docker.internal:host-gateway" \
+    log "Setting up Docker environment and starting services..."
+    cd ./packages/tracker/ || handle_error "Failed to navigate to tracker package."
+    sudo chmod 777 docker/data || handle_error "Failed to set permissions for data directory."
+    sudo chmod 777 docker/pgdata || handle_error "Failed to set permissions for pgdata directory."
+    sudo docker-compose up -d || handle_error "Failed to start Docker services."
+
+    log "Building and running Docker image for the tracker..."
+    cd ../../ || handle_error "Failed to navigate back to root directory."
+    sudo docker build -t tracker:latest . || handle_error "Failed to build Docker image."
+    sudo docker run -d --name tracker --add-host="host.docker.internal:host-gateway" \
         -e DATABASE_HOST="host.docker.internal" \
         -e RPC_HOST="host.docker.internal" \
-        -p 3000:3000 \
-        tracker:latest
+        -p 3000:3000 tracker:latest || handle_error "Failed to run Docker container for tracker."
 
-    # Create configuration file
+    log "Creating the configuration file for CAT Token Box..."
     echo '{
       "network": "fractal-mainnet",
       "tracker": "http://127.0.0.1:3000",
@@ -96,9 +89,9 @@ install_env_and_full_node() {
           "username": "bitcoin",
           "password": "opcatAwesome"
       }
-    }' > ~/cat-token-box/packages/cli/config.json
+    }' > ~/cat-token-box/packages/cli/config.json || handle_error "Failed to create config.json."
 
-    # Create mint script
+    log "Creating mint script..."
     echo '#!/bin/bash
 
     command="sudo yarn cli mint -i 45ee725c2c5993b3e4d308842d87e973bf1951f5f7a804b21e4dd964ecd12d6b_0 5"
@@ -112,40 +105,42 @@ install_env_and_full_node() {
         fi
 
         sleep 1
-    done' > ~/cat-token-box/packages/cli/mint_script.sh
-    chmod +x ~/cat-token-box/packages/cli/mint_script.sh
+    done' > ~/cat-token-box/packages/cli/mint_script.sh || handle_error "Failed to create mint_script.sh."
+    chmod +x ~/cat-token-box/packages/cli/mint_script.sh || handle_error "Failed to set executable permissions for mint_script.sh."
 }
 
-# Create wallet
+# Function to create a wallet
 create_wallet() {
-  echo -e "\n"
-  cd ~/cat-token-box/packages/cli
-  sudo yarn cli wallet create
-  echo -e "\n"
-  sudo yarn cli wallet address
-  echo -e "Please save the wallet address and mnemonic phrase created above."
+    log "Creating a new wallet..."
+    cd ~/cat-token-box/packages/cli || handle_error "Failed to navigate to CLI package."
+    sudo yarn cli wallet create || handle_error "Failed to create a new wallet."
+    sudo yarn cli wallet address || handle_error "Failed to retrieve the wallet address."
+    log "Please save the wallet address and mnemonic phrase created above."
 }
 
-# Start mint script
+# Function to start the minting process
 start_mint_cat() {
-  cd ~/cat-token-box/packages/cli
-  bash ~/cat-token-box/packages/cli/mint_script.sh
+    log "Starting the minting process..."
+    cd ~/cat-token-box/packages/cli || handle_error "Failed to navigate to CLI package."
+    bash ~/cat-token-box/packages/cli/mint_script.sh || handle_error "Minting process failed."
 }
 
-# Check node synchronization log
+# Function to check node synchronization log
 check_node_log() {
-  docker logs -f --tail 100 tracker
+    log "Checking the node synchronization log..."
+    docker logs -f --tail 100 tracker || handle_error "Failed to fetch node logs."
 }
 
-# Check wallet balance
+# Function to check wallet balance
 check_wallet_balance() {
-  cd ~/cat-token-box/packages/cli
-  sudo yarn cli wallet balances
+    log "Checking wallet balance..."
+    cd ~/cat-token-box/packages/cli || handle_error "Failed to navigate to CLI package."
+    sudo yarn cli wallet balances || handle_error "Failed to retrieve wallet balances."
 }
 
 # Display main menu
 echo -e "\n
-Welcome to the CAT Token Box installation script.
+${COLOR_GREEN}Welcome to the CAT Token Box installation script.${COLOR_RESET}
 This script is completely free and open source.
 Please choose an operation as needed:
 1. Install dependencies and full node
@@ -174,6 +169,6 @@ case "$num" in
     start_mint_cat
     ;;
 *)
-    echo -e "Error: Please enter a valid number."
+    handle_error "Invalid option. Please enter a valid number."
     ;;
 esac
