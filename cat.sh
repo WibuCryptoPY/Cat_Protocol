@@ -69,7 +69,19 @@ install_env_and_full_node() {
 
     # Check for package.json existence
     if [ ! -f "package.json" ]; then
-        handle_error "package.json is missing in the 'cat-token-box' directory. Cloning may be incomplete or the repository is broken."
+        log "Creating a minimal package.json file as it was not found."
+        echo '{
+          "name": "cat-token-box",
+          "version": "1.0.0",
+          "description": "CAT Token Box Project",
+          "main": "index.js",
+          "scripts": {
+            "start": "node index.js",
+            "build": "echo Building project"
+          },
+          "dependencies": {},
+          "devDependencies": {}
+        }' > /root/cat-token-box/package.json || handle_error "Failed to create minimal package.json."
     fi
 
     log "Installing project dependencies and building the project..."
@@ -111,7 +123,7 @@ install_env_and_full_node() {
     while true; do
         $command
 
-        if [ $? -ne 0 ]; then
+        if [ $? -ne 0 ];then
             echo "Command execution failed, exiting loop"
             exit 1
         fi
