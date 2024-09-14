@@ -56,9 +56,16 @@ install_env_and_full_node() {
     sudo n stable || handle_error "Failed to install the stable version of Node.js."
     sudo npm i -g yarn || handle_error "Failed to install Yarn."
 
-    log "Cloning CAT Token Box project..."
-    git clone https://github.com/CATProtocol/cat-token-box || handle_error "Failed to clone CAT Token Box repository."
+    # Add this condition before cloning the repository
+    if [ -d "cat-token-box" ]; then
+        log "Directory 'cat-token-box' already exists, skipping cloning."
+    else
+        log "Cloning CAT Token Box project..."
+        git clone https://github.com/CATProtocol/cat-token-box || handle_error "Failed to clone CAT Token Box repository."
+    fi
+    
     cd cat-token-box || handle_error "Failed to navigate to cat-token-box directory."
+
 
     log "Installing project dependencies and building the project..."
     sudo yarn install || handle_error "Failed to install dependencies."
