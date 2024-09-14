@@ -89,9 +89,22 @@ install_env_and_full_node() {
     sudo yarn build || handle_error "Failed to build the project."
 
     log "Setting up Docker environment and starting services..."
-    cd ./packages/tracker/ || handle_error "Failed to navigate to tracker package."
+
+    # Ensure the docker/data and docker/pgdata directories exist
+    if [ ! -d "docker/data" ]; then
+        log "Creating 'docker/data' directory..."
+        mkdir -p docker/data || handle_error "Failed to create 'docker/data' directory."
+    fi
+
+    if [ ! -d "docker/pgdata" ]; then
+        log "Creating 'docker/pgdata' directory..."
+        mkdir -p docker/pgdata || handle_error "Failed to create 'docker/pgdata' directory."
+    fi
+
+    # Set directory permissions
     sudo chmod 777 docker/data || handle_error "Failed to set permissions for data directory."
     sudo chmod 777 docker/pgdata || handle_error "Failed to set permissions for pgdata directory."
+
     sudo docker-compose up -d || handle_error "Failed to start Docker services."
 
     log "Building and running Docker image for the tracker..."
